@@ -7,7 +7,7 @@
     <artifactId>annotations</artifactId>
     <groupId>io.github.kojiv</groupId>
     <!--https://github.com/marketplace/actions/github-release-changelog-generator-->
-    <version>1.1.2</version>
+    <version>1.1.3</version>
 
     <properties>
         <java.version>1.8</java.version>

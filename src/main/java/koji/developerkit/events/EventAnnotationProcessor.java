@@ -2,6 +2,7 @@ package koji.developerkit.events;
 
 import com.google.auto.service.AutoService;
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -25,7 +26,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -80,21 +80,13 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .map(elementValuesWithDefaults::get).findAny().get();
 
             // OH god the crap
-
-            Set<String> ignoredClassNames = Arrays.stream(((String) value.getValue()).split(",")).collect(Collectors.toSet());
-            /*.map(b -> {
-                int last = b.lastIndexOf(".");
-                return b.substring(0, last);
-            }).collect(Collectors.toSet())*/;
-
-            //Set<String> ignoredClassNames = ((List<com.sun.tools.javac.code.Attribute.Class>) value.getValue())
-                    //.stream()
-                    //.map(Attribute.Class::toString)
-                    //.map(b -> {
-                        //int last = b.lastIndexOf(".");
-                        //return b.substring(0, last);
-                    //})
-                    //.collect(Collectors.toSet());
+            Set<String> ignoredClassNames = ((List<com.sun.tools.javac.code.Attribute.Class>) value.getValue())
+                    .stream()
+                    .map(Attribute.Class::toString)
+                    .map(b -> {
+                        int last = b.lastIndexOf(".");
+                        return b.substring(0, last);
+                    }).collect(Collectors.toSet());
 
 
             JCTree.JCMethodDecl toExecute = (JCTree.JCMethodDecl) trees.getTree(a);
