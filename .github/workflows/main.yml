@@ -97,7 +97,7 @@ jobs:
           tag_name: ${{ steps.get-version.outputs.version }}
           release_name: ${{ steps.get-version.outputs.version }}
           body: |
-            Grab the new version from https://s01.oss.sonatype.org/content/repositories/releases/io/github/kojiv/developerkit/${{ steps.get-version.outputs.version }} by using it in your dependencies
+            Grab the new version from https://s01.oss.sonatype.org/content/repositories/releases/io/github/kojiv/annotations/${{ steps.get-version.outputs.version }} by using it in your dependencies
             
             ```
             <dependencies>
