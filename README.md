@@ -10,7 +10,7 @@ Gib second I need to give credit where credit is due but I can't find the guy
 
 ## Download
 
-#### Maven [![maven](https://img.shields.io/maven-central/v/io.github.kojiv/annotations)](https://s01.oss.sonatype.org/content/repositories/releases/io/github/kojiv/annotations/)
+#### Maven [![maven]([https://img.shields.io/maven-central/v/io.github.kojiv/annotations](https://img.shields.io/maven-central/v/io.github.kojiv/annotations?versionPrefix=1.0.1))](https://s01.oss.sonatype.org/content/repositories/releases/io/github/kojiv/annotations/)
 
 ```xml
 <dependency>
