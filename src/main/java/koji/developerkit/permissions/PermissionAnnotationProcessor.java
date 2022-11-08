@@ -14,6 +14,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
@@ -42,11 +43,21 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
         return true;
     }
 
+    Messager messager;
+
+    @Override
+    public void init(ProcessingEnvironment env) {
+        messager = env.getMessager();
+        super.init(env);
+    }
+
     private void processAnnotation(TypeElement annotation, RoundEnvironment roundEnvironment, FileObject file) {
         roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
             String prefix = a.getAnnotation(AddPermissions.class).prefix();
             PermissionDefault permissionLevel = a.getAnnotation(AddPermissions.class).permission();
             String description = a.getAnnotation(AddPermissions.class).description();
+
+            messager.printMessage(Diagnostic.Kind.NOTE, "AHHHHH: " + a.getEnclosingElement().getSimpleName().toString());
 
             ClassInfoList enchants = new ClassGraph()
                     .enableClassInfo()
