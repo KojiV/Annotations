@@ -12,8 +12,6 @@ import org.yaml.snakeyaml.nodes.Tag;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
@@ -34,7 +32,42 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
                     StandardLocation.CLASS_OUTPUT, "", "plugin.yml"
             );
 
-            annotations.forEach(a -> processAnnotation(a, roundEnvironment, file));
+            ClassInfoList onesWithAnnotation = new ClassGraph()
+                    .enableAnnotationInfo()
+                    .enableClassInfo()
+                    .scan()
+                    .getClassesWithAnnotation(AddPermissions.class);
+
+            onesWithAnnotation.forEach(t -> {
+                AnnotationParameterValueList list = t.getAnnotationInfo(AddPermissions.class).getParameterValues();
+                String prefix = (String) list.getValue("prefix");
+                PermissionDefault permissionLevel = (PermissionDefault) list.getValue("permission");
+                String description = (String) list.getValue("description");
+
+                Map<String, Object> yml = Maps.newLinkedHashMap();
+                Map<String, Map<String, Object>> permissionMetadata = Maps.newLinkedHashMap();
+                t.getSubclasses().forEach(b ->
+                        permissionMetadata.put(
+                                prefix + "." + b.getSimpleName().toLowerCase(),
+                                processPermission(
+                                        description,
+                                        permissionLevel
+                                )
+                        )
+                );
+                yml.put("permissions", permissionMetadata);
+
+                try {
+                    Yaml yaml = new Yaml();
+                    try (Writer w = file.openWriter()) {
+                        String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
+                        w.write(raw);
+                        w.flush();
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -42,46 +75,6 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
 
         return true;
     }
-
-    private void processAnnotation(TypeElement annotation, RoundEnvironment roundEnvironment, FileObject file) {
-        ClassInfoList onesWithAnnotation = new ClassGraph()
-                .enableAnnotationInfo()
-                .enableClassInfo()
-                .scan()
-                .getClassesWithAnnotation(AddPermissions.class);
-
-        onesWithAnnotation.forEach(t -> {
-            AnnotationParameterValueList list = t.getAnnotationInfo(AddPermissions.class).getParameterValues();
-            String prefix = (String) list.getValue("prefix");
-            PermissionDefault permissionLevel = (PermissionDefault) list.getValue("permission");
-            String description = (String) list.getValue("description");
-
-            Map<String, Object> yml = Maps.newLinkedHashMap();
-            Map<String, Map<String, Object>> permissionMetadata = Maps.newLinkedHashMap();
-            t.getSubclasses().forEach(b ->
-                permissionMetadata.put(
-                        prefix + "." + b.getSimpleName().toLowerCase(),
-                        processPermission(
-                                description,
-                                permissionLevel
-                        )
-                )
-            );
-            yml.put("permissions", permissionMetadata);
-
-            try {
-                Yaml yaml = new Yaml();
-                try (Writer w = file.openWriter()) {
-                    String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
-                    w.write(raw);
-                    w.flush();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
     protected Map<String, Object> processPermission(String description, PermissionDefault permissionDefault) {
         Map<String, Object> permission = Maps.newLinkedHashMap();
 
@@ -94,55 +87,5 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
         }
 
         return permission;
-    }
-
-    private AnnotationValue annotationValue(
-            String value,
-            Map<? extends ExecutableElement, ? extends AnnotationValue> elementValuesWithDefaults
-    ) {
-        return elementValuesWithDefaults.keySet()
-                .stream()
-                .filter(b -> b.getSimpleName().toString().equals(value))
-                .map(elementValuesWithDefaults::get).findAny().get();
-    }
-
-    public static String capitalize(String str) {
-        return capitalize(str, null);
-    }
-
-    public static String capitalize(String str, char[] delimiters) {
-        int delimLen = (delimiters == null ? -1 : delimiters.length);
-        if (str == null || str.length() == 0 || delimLen == 0) {
-            return str;
-        }
-        int strLen = str.length();
-        StringBuilder buffer = new StringBuilder(strLen);
-        boolean capitalizeNext = true;
-        for (int i = 0; i < strLen; i++) {
-            char ch = str.charAt(i);
-
-            if (isDelimiter(ch, delimiters)) {
-                buffer.append(ch);
-                capitalizeNext = true;
-            } else if (capitalizeNext) {
-                buffer.append(Character.toTitleCase(ch));
-                capitalizeNext = false;
-            } else {
-                buffer.append(ch);
-            }
-        }
-        return buffer.toString();
-    }
-
-    private static boolean isDelimiter(char ch, char[] delimiters) {
-        if (delimiters == null) {
-            return Character.isWhitespace(ch);
-        }
-        for (char delimiter : delimiters) {
-            if (ch == delimiter) {
-                return true;
-            }
-        }
-        return false;
     }
 }
