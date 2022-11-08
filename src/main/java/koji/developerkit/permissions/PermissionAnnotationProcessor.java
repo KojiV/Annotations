@@ -42,25 +42,19 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
         return true;
     }
 
-    Messager messager;
-
-    @Override
-    public void init(ProcessingEnvironment env) {
-        messager = env.getMessager();
-        super.init(env);
-    }
-
     private void processAnnotation(TypeElement annotation, RoundEnvironment roundEnvironment, FileObject file) {
         roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
             String prefix = a.getAnnotation(AddPermissions.class).prefix();
             PermissionDefault permissionLevel = a.getAnnotation(AddPermissions.class).permission();
             String description = a.getAnnotation(AddPermissions.class).description();
 
+
+
             ClassInfoList enchants = new ClassGraph()
                     .enableClassInfo()
                     .enableAnnotationInfo()
                     .scan()
-                    .getClassInfo(a.asType().toString())
+                    .getClassInfo(a.getSimpleName().toString())
                     .getSubclasses();
 
             Map<String, Object> yml = Maps.newLinkedHashMap();
