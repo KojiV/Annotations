@@ -11,7 +11,6 @@ import org.yaml.snakeyaml.nodes.Tag;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -45,21 +44,9 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
 
     private void processAnnotation(TypeElement annotation, RoundEnvironment roundEnvironment, FileObject file) {
         roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
-            AnnotationMirror mirror = a.getAnnotationMirrors().stream().filter(b ->
-                    b.getAnnotationType().toString().equals(
-                            AddPermissions.class.getName()
-                    )
-            ).findAny().get();
-            Map<? extends ExecutableElement, ? extends AnnotationValue> elementValuesWithDefaults =
-                    processingEnv.getElementUtils().getElementValuesWithDefaults(mirror);
-
-            AnnotationValue permissionLevelValue = annotationValue("permission", elementValuesWithDefaults);
-            AnnotationValue prefixValue = annotationValue("prefix", elementValuesWithDefaults);
-            AnnotationValue descriptionValue = annotationValue("description", elementValuesWithDefaults);
-
-            String prefix = (String) prefixValue.getValue();
-            PermissionDefault permissionLevel = (PermissionDefault) permissionLevelValue.getValue();
-            String description = (String) descriptionValue.getValue();
+            String prefix = a.getAnnotation(AddPermissions.class).prefix();
+            PermissionDefault permissionLevel = a.getAnnotation(AddPermissions.class).permission();
+            String description = a.getAnnotation(AddPermissions.class).description();
 
             ClassInfoList enchants = new ClassGraph()
                     .enableClassInfo()
