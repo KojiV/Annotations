@@ -52,7 +52,7 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
                     .enableClassInfo()
                     .enableAnnotationInfo()
                     .scan()
-                    .getClassInfo(a.asType().toString())
+                    .getClassInfo(a.getEnclosingElement().getSimpleName().toString())
                     .getSubclasses();
 
             Map<String, Object> yml = Maps.newLinkedHashMap();
