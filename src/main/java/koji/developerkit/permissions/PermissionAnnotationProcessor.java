@@ -2,8 +2,8 @@ package koji.developerkit.permissions;
 
 import com.google.auto.service.AutoService;
 import com.google.common.collect.Maps;
+import net.sourceforge.stripes.util.ResolverUtil;
 import org.bukkit.permissions.PermissionDefault;
-import org.reflections.Reflections;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -64,7 +64,6 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return true;
     }
 
@@ -86,11 +85,14 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
     private String processTesting(TypeElement annotation, RoundEnvironment roundEnvironment) {
         StringBuilder sb = new StringBuilder();
         roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
-            Reflections reflections = new Reflections("koji.skyblock.items.enchants.enchants");
             try {
-                Set<Class<?>> classes = reflections.getSubTypesOf((Class<Object>) Class.forName(a.asType().toString()));
+                ResolverUtil<?> resolverUtil = new ResolverUtil<>()
+                        .findImplementations(
+                                Class.forName(a.asType().toString()),
+                                a.getAnnotation(AddPermissions.class).searchDirectories()
+                        );
 
-                classes.forEach(b ->
+                resolverUtil.getClasses().forEach(b ->
                         sb.append(b.getName()).append(" ")
                 );
             } catch (ClassNotFoundException e) {
@@ -108,11 +110,14 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
             PermissionDefault permissionLevel = a.getAnnotation(AddPermissions.class).permission();
             String description = a.getAnnotation(AddPermissions.class).description();
 
-            Reflections reflections = new Reflections("koji.skyblock.items.enchants.enchants");
             try {
-                Set<Class<?>> classes = reflections.getSubTypesOf((Class<Object>) Class.forName(a.asType().toString()));
+                ResolverUtil<?> resolverUtil = new ResolverUtil<>()
+                        .findImplementations(
+                                Class.forName(a.asType().toString()),
+                                a.getAnnotation(AddPermissions.class).searchDirectories()
+                        );
 
-                classes.forEach(b ->
+                resolverUtil.getClasses().forEach(b ->
                         permissionMetadata.put(
                                 prefix + "." + b.getSimpleName().toLowerCase(),
                                 processPermission(

@@ -12,7 +12,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
-import org.reflections.Reflections;
+import net.sourceforge.stripes.util.ResolverUtil;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -106,18 +106,19 @@ public class EventAnnotationProcessor extends AbstractProcessor {
 
             TypeMirror type = ((ExecutableType) a.asType()).getParameterTypes().get(0);
 
-            Reflections reflections = new Reflections();
             try {
-                Stream<Class<?>> events =
-                        reflections.getSubTypesOf((Class<Object>) Class.forName(type.toString()))
-                                .stream()
+                ResolverUtil<?> resolverUtil = new ResolverUtil<>()
+                        .findImplementations(
+                                Class.forName(a.asType().toString()),
+                                "org.bukkit.event"
+                        );
+                Stream<Class<?>> events = (Stream<Class<?>>) resolverUtil.getClasses().stream()
                                 .filter(info -> !ignoredClassNames.contains(info.getName()))
                                 .filter(info -> Modifier.isAbstract(info.getModifiers()));
 
                 if (!includeDeprecated) {
                     events = events.filter(info -> !info.isAnnotationPresent(Deprecated.class));
                 }
-
 
                 java.util.List<JCTree.JCMethodDecl> added = events.map(b -> {
                     JCTree.JCVariableDecl variableDecl = maker.VarDef(

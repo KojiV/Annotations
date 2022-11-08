@@ -12,5 +12,6 @@ import java.lang.annotation.Target;
 public @interface AddPermissions {
     PermissionDefault permission() default PermissionDefault.OP;
     String description() default "";
+    String[] searchDirectories();
     String prefix();
 }
