@@ -87,7 +87,14 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
     private String processTesting(TypeElement annotation, RoundEnvironment roundEnvironment) {
         StringBuilder sb = new StringBuilder();
         roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
-            sb.append(a.asType().toString()).append(" ");
+            ClassInfoList enchants = new ClassGraph()
+                    .enableClassInfo()
+                    .scan()
+                    .getSubclasses(a.asType().toString());
+
+            enchants.forEach(b ->
+                    sb.append(b.getName()).append(" ")
+            );
         });
         return sb.toString();
     }
