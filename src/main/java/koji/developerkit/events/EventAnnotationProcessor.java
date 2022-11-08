@@ -33,20 +33,19 @@ import java.util.stream.Collectors;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("koji.developerkit.events.ExpandEventHandler")
 @AutoService(Processor.class)
+@SuppressWarnings("unused")
 public class EventAnnotationProcessor extends AbstractProcessor {
 
     private TreeMaker maker;
     private Trees trees;
     private Names names;
-    private Context context;
-    private JavacProcessingEnvironment javacProcessingEnvironment;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
         super.init(processingEnvironment);
 
-        javacProcessingEnvironment = (JavacProcessingEnvironment) this.processingEnv;
-        context = javacProcessingEnvironment.getContext();
+        JavacProcessingEnvironment javacProcessingEnvironment = (JavacProcessingEnvironment) this.processingEnv;
+        Context context = javacProcessingEnvironment.getContext();
 
         maker = TreeMaker.instance(context);
         trees = Trees.instance(this.processingEnv);
@@ -55,9 +54,9 @@ public class EventAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
-        annotations.forEach(a -> {
-            processAnnotation(a, roundEnvironment);
-        });
+        annotations.forEach(a ->
+            processAnnotation(a, roundEnvironment)
+        );
 
         return true;
     }
