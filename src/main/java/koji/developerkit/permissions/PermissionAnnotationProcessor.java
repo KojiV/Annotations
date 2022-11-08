@@ -2,9 +2,8 @@ package koji.developerkit.permissions;
 
 import com.google.auto.service.AutoService;
 import com.google.common.collect.Maps;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfoList;
 import org.bukkit.permissions.PermissionDefault;
+import org.reflections.Reflections;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -84,17 +83,20 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
         return "";
     }
 
+    @SuppressWarnings("unchecked")
     private String processTesting(TypeElement annotation, RoundEnvironment roundEnvironment) {
         StringBuilder sb = new StringBuilder();
         roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
-            ClassInfoList enchants = new ClassGraph()
-                    .enableClassInfo()
-                    .scan()
-                    .getSubclasses(a.asType().toString());
+            Reflections reflections = new Reflections("koji.skyblock.items.enchants.enchants");
+            try {
+                Set<Class<?>> classes = reflections.getSubTypesOf((Class<Object>) Class.forName(a.asType().toString()));
 
-            enchants.forEach(b ->
-                    sb.append(b.getName()).append(" ")
-            );
+                classes.forEach(b ->
+                        sb.append(b.getName()).append(" ")
+                );
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
         });
         return sb.toString();
     }
@@ -107,20 +109,22 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
             PermissionDefault permissionLevel = a.getAnnotation(AddPermissions.class).permission();
             String description = a.getAnnotation(AddPermissions.class).description();
 
-            ClassInfoList enchants = new ClassGraph()
-                    .enableClassInfo()
-                    .scan()
-                    .getSubclasses(a.asType().toString());
+            Reflections reflections = new Reflections("koji.skyblock.items.enchants.enchants");
+            try {
+                Set<Class<?>> classes = reflections.getSubTypesOf((Class<Object>) Class.forName(a.asType().toString()));
 
-            enchants.forEach(b ->
-                permissionMetadata.put(
-                        prefix + "." + b.getSimpleName().toLowerCase(),
-                        processPermission(
-                                description,
-                                permissionLevel
+                classes.forEach(b ->
+                        permissionMetadata.put(
+                                prefix + "." + b.getSimpleName().toLowerCase(),
+                                processPermission(
+                                        description,
+                                        permissionLevel
+                                )
                         )
-                )
-            );
+                );
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
         });
         return permissionMetadata;
     }

@@ -12,8 +12,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfoList;
+import org.reflections.Reflections;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("koji.developerkit.events.ExpandEventHandler")
@@ -106,48 +106,57 @@ public class EventAnnotationProcessor extends AbstractProcessor {
 
             TypeMirror type = ((ExecutableType) a.asType()).getParameterTypes().get(0);
 
-            ClassInfoList events = new ClassGraph()
-                    .enableClassInfo()
-                    .enableMethodInfo()
-                    .enableAnnotationInfo()
-                    .scan()
-                    .getClassInfo(type.toString())
-                    .getSubclasses()
-                    .filter(info -> !ignoredClassNames.contains(info.getName()))
-                    .filter(info -> !info.isAbstract());
+            Reflections reflections = new Reflections();
+            try {
+                Stream<Class<?>> events =
+                        reflections.getSubTypesOf((Class<Object>) Class.forName(type.toString()))
+                                .stream()
+                                .filter(info -> !ignoredClassNames.contains(info.getName()))
+                                .filter(info -> Modifier.isAbstract(info.getModifiers()));
 
-            if (!includeDeprecated) {
-                events = events.filter(info -> !info.hasAnnotation(Deprecated.class.getName()));
+                if (!includeDeprecated) {
+                    events = events.filter(info -> !info.isAnnotationPresent(Deprecated.class));
+                }
+
+
+                java.util.List<JCTree.JCMethodDecl> added = events.map(b -> {
+                    JCTree.JCVariableDecl variableDecl = maker.VarDef(
+                            maker.Modifiers(Flags.PARAMETER),
+                            eventName,
+                            dotNames(b.getName()),
+                            null
+                    );
+
+                    variableDecl.setPos(Integer.MAX_VALUE);
+
+                    final JCTree.JCMethodInvocation methoddec = maker.Apply(
+                            List.nil(),
+                            maker.Ident(toExecute.getName()),
+                            List.of(maker.Ident(eventName))
+                    );
+                    JCTree.JCStatement jcStatement = maker.Exec(methoddec);
+                    JCTree.JCBlock block = maker.Block(0, List.of(jcStatement));
+
+                    return maker.MethodDef(modifiers,
+                            names.fromString("on" + b.getSimpleName()),
+                            voidExpression,
+                            List.nil(),
+                            List.of(variableDecl), //params
+                            List.nil(),
+                            block,
+                            null);
+
+                }).collect(Collectors.toList());
+
+                List<JCTree> list = classDecl.defs;
+
+                java.util.List<JCTree> newList = new ArrayList<>(list);
+                newList.addAll(added);
+
+                classDecl.defs = List.from(newList);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
-
-            java.util.List<JCTree.JCMethodDecl> added = events.stream().map(b -> {
-                JCTree.JCVariableDecl variableDecl = maker.VarDef(maker.Modifiers(Flags.PARAMETER), eventName, dotNames(b.getName()), null);
-
-                variableDecl.setPos(Integer.MAX_VALUE);
-
-                final JCTree.JCMethodInvocation methoddec = maker.Apply(List.nil(), maker.Ident(toExecute.getName()), List.of(maker.Ident(eventName)));
-                JCTree.JCStatement jcStatement = maker.Exec(methoddec);
-                JCTree.JCBlock block = maker.Block(0, List.of(jcStatement));
-//                JCTree.JCBlock block = maker.Block(0, List.nil());
-
-
-                return maker.MethodDef(modifiers,
-                        names.fromString("on" + b.getSimpleName()),
-                        voidExpression,
-                        List.nil(),
-                        List.of(variableDecl), //params
-                        List.nil(),
-                        block,
-                        null);
-
-            }).collect(Collectors.toList());
-
-            List<JCTree> list = classDecl.defs;
-
-            java.util.List<JCTree> newList = new ArrayList<>(list);
-            newList.addAll(added);
-
-            classDecl.defs = List.from(newList);
         });
     }
 
