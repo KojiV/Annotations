@@ -2,6 +2,7 @@ package koji.developerkit.permissions;
 
 import com.google.auto.service.AutoService;
 import com.google.common.collect.Maps;
+import io.github.classgraph.AnnotationParameterValueList;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import org.bukkit.permissions.PermissionDefault;
@@ -43,23 +44,21 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
     }
 
     private void processAnnotation(TypeElement annotation, RoundEnvironment roundEnvironment, FileObject file) {
-        roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
-            String prefix = a.getAnnotation(AddPermissions.class).prefix();
-            PermissionDefault permissionLevel = a.getAnnotation(AddPermissions.class).permission();
-            String description = a.getAnnotation(AddPermissions.class).description();
+        ClassInfoList onesWithAnnotation = new ClassGraph()
+                .enableAnnotationInfo()
+                .enableClassInfo()
+                .scan()
+                .getClassesWithAnnotation(AddPermissions.class);
 
-
-
-            ClassInfoList enchants = new ClassGraph()
-                    .enableClassInfo()
-                    .enableAnnotationInfo()
-                    .scan()
-                    .getClassInfo(a.getSimpleName().toString())
-                    .getSubclasses();
+        onesWithAnnotation.forEach(t -> {
+            AnnotationParameterValueList list = t.getAnnotationInfo(AddPermissions.class).getParameterValues();
+            String prefix = (String) list.getValue("prefix");
+            PermissionDefault permissionLevel = (PermissionDefault) list.getValue("permission");
+            String description = (String) list.getValue("description");
 
             Map<String, Object> yml = Maps.newLinkedHashMap();
             Map<String, Map<String, Object>> permissionMetadata = Maps.newLinkedHashMap();
-            enchants.forEach(b ->
+            t.getSubclasses().forEach(b ->
                 permissionMetadata.put(
                         prefix + "." + b.getSimpleName().toLowerCase(),
                         processPermission(
@@ -69,9 +68,10 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
                 )
             );
             yml.put("permissions", permissionMetadata);
+
             try {
                 Yaml yaml = new Yaml();
-                try (Writer w = file.openWriter()){
+                try (Writer w = file.openWriter()) {
                     String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
                     w.write(raw);
                     w.flush();
