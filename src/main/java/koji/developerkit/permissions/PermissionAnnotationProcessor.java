@@ -14,7 +14,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
@@ -57,13 +56,11 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
             PermissionDefault permissionLevel = a.getAnnotation(AddPermissions.class).permission();
             String description = a.getAnnotation(AddPermissions.class).description();
 
-            messager.printMessage(Diagnostic.Kind.NOTE, "AHHHHH: " + a.getEnclosingElement().getSimpleName().toString());
-
             ClassInfoList enchants = new ClassGraph()
                     .enableClassInfo()
                     .enableAnnotationInfo()
                     .scan()
-                    .getClassInfo(a.getEnclosingElement().getSimpleName().toString())
+                    .getClassInfo(a.asType().toString())
                     .getSubclasses();
 
             Map<String, Object> yml = Maps.newLinkedHashMap();
