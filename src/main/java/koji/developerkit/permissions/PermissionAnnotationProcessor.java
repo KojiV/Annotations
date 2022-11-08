@@ -41,14 +41,19 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
 
             Map<String, Object> yml = Maps.newLinkedHashMap();
             Map<String, Map<String, Object>> permissionMetadata = Maps.newLinkedHashMap();
-            annotations.forEach(a -> permissionMetadata.putAll(processAnnotation(a, roundEnvironment)));
-            yml.put("permission", permissionMetadata);
+
+            StringBuilder sb = new StringBuilder();
+            annotations.forEach(a -> {
+                permissionMetadata.putAll(processAnnotation(a, roundEnvironment));
+                sb.append(processTesting(a, roundEnvironment));
+            });
+            yml.put("permissions", permissionMetadata);
 
             try {
                 Yaml yaml = new Yaml();
                 try (Writer w = file.openWriter()) {
                     w.append(msg).append("\n");
-                    w.append(yml.get("permission").toString());
+                    w.append(sb.toString());
                     String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
                     w.write(raw);
                     w.flush();
@@ -77,6 +82,14 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
             e.printStackTrace();
         }
         return "";
+    }
+
+    private String processTesting(TypeElement annotation, RoundEnvironment roundEnvironment) {
+        StringBuilder sb = new StringBuilder();
+        roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
+            sb.append(a.asType().toString()).append(" ");
+        });
+        return sb.toString();
     }
 
     private Map<String, Map<String, Object>> processAnnotation(TypeElement annotation, RoundEnvironment roundEnvironment) {
