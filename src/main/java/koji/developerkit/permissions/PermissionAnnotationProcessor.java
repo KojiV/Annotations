@@ -40,12 +40,15 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
             );
 
             Map<String, Object> yml = Maps.newLinkedHashMap();
-            annotations.forEach(a -> yml.putAll(processAnnotation(a, roundEnvironment)));
+            Map<String, Map<String, Object>> permissionMetadata = Maps.newLinkedHashMap();
+            annotations.forEach(a -> permissionMetadata.putAll(processAnnotation(a, roundEnvironment)));
+            yml.put("permission", permissionMetadata);
 
             try {
                 Yaml yaml = new Yaml();
                 try (Writer w = file.openWriter()) {
                     w.append(msg).append("\n");
+                    w.append(yml.get("permission").toString());
                     String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
                     w.write(raw);
                     w.flush();
