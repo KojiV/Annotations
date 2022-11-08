@@ -22,7 +22,7 @@ import java.util.Set;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("koji.developerkit.permissions.AddPermissions")
 @AutoService(Processor.class)
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "unchecked"})
 public class PermissionAnnotationProcessor extends AbstractProcessor {
 
     @Override
@@ -83,7 +83,6 @@ public class PermissionAnnotationProcessor extends AbstractProcessor {
         return "";
     }
 
-    @SuppressWarnings("unchecked")
     private String processTesting(TypeElement annotation, RoundEnvironment roundEnvironment) {
         StringBuilder sb = new StringBuilder();
         roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
